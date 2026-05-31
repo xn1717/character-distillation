@@ -10,6 +10,22 @@
     background: #ffffff;        
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
+
+  /* --- 手機響應式 --- */
+  @media (max-width: 600px) {
+    .bubble { font-size: 16px !important; max-width: 86% !important; padding: 11px 14px !important; line-height: 1.55 !important; }
+    .btime { font-size: 12px !important; }
+    .hd-name { font-size: 17px !important; }
+    .hd-sub { font-size: 13px !important; }
+    .qlabel { font-size: 14px !important; }
+    .qbtn { font-size: 14px !important; padding: 9px 18px !important; }
+    .conv-name { font-size: 15px !important; }
+    .conv-sub { font-size: 13px !important; }
+    .sidebar-title { font-size: 15px !important; }
+    .messages { padding: 14px 10px !important; gap: 10px !important; }
+    .tg-header { padding: 11px 14px !important; }
+    .input-area { padding: 10px 12px !important; }
+  }
   
   /* --- 側邊欄模組 --- */
   .sidebar{width:250px;background:#ffffff;display:flex;flex-direction:column;transition:width 0.22s ease;flex-shrink:0;border-right:1px solid #e6e6e6}
@@ -432,6 +448,11 @@ function switchChat(id) {
 
   renderButtons();
   msgs.scrollTop = msgs.scrollHeight;
+
+  if (window.innerWidth <= 600) {
+    sidebar.classList.add('collapsed');
+    expandBtn.style.display = 'flex';
+  }
 }
 
 function renderButtons() {
@@ -608,4 +629,9 @@ expandBtn.addEventListener('click', () => {
 });
 
 renderButtons();
+
+if (window.innerWidth <= 600) {
+  sidebar.classList.add('collapsed');
+  expandBtn.style.display = 'flex';
+}
 </script>

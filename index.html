@@ -1,6 +1,8 @@
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <style>
   /* --- 全域初始化與全螢幕外殼 --- */
   *{box-sizing:border-box;margin:0;padding:0}
+  html { font-size: clamp(13px, 3.8vw, 16px); }
   .app {
     display: flex;
     width: 100vw;               
@@ -10,49 +12,33 @@
     background: #ffffff;        
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
-
-  /* --- 手機響應式 --- */
-  @media (max-width: 600px) {
-    .bubble { font-size: 16px !important; max-width: 86% !important; padding: 11px 14px !important; line-height: 1.55 !important; }
-    .btime { font-size: 12px !important; }
-    .hd-name { font-size: 17px !important; }
-    .hd-sub { font-size: 13px !important; }
-    .qlabel { font-size: 14px !important; }
-    .qbtn { font-size: 14px !important; padding: 9px 18px !important; }
-    .conv-name { font-size: 15px !important; }
-    .conv-sub { font-size: 13px !important; }
-    .sidebar-title { font-size: 15px !important; }
-    .messages { padding: 14px 10px !important; gap: 10px !important; }
-    .tg-header { padding: 11px 14px !important; }
-    .input-area { padding: 10px 12px !important; }
-  }
   
   /* --- 側邊欄模組 --- */
-  .sidebar{width:250px;background:#ffffff;display:flex;flex-direction:column;transition:width 0.22s ease;flex-shrink:0;border-right:1px solid #e6e6e6}
+  .sidebar{width: clamp(180px, 36vw, 260px);background:#ffffff;display:flex;flex-direction:column;transition:width 0.22s ease;flex-shrink:0;border-right:1px solid #e6e6e6}
   .sidebar.collapsed{width:0;border-right:none}
   
-  .sidebar-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f2f2f2;flex-shrink:0}
-  .sidebar-title{font-size:14px;font-weight:600;color:#222222;white-space:nowrap;overflow:hidden}
+  .sidebar-header{padding:clamp(10px,2.5vw,14px) clamp(10px,3vw,16px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f2f2f2;flex-shrink:0}
+  .sidebar-title{font-size:clamp(13px,3.5vw,15px);font-weight:600;color:#222222;white-space:nowrap;overflow:hidden}
   .sidebar-list{flex:1;overflow-y:auto;overflow-x:hidden}
   .sidebar-list::-webkit-scrollbar{width:4px}
   .sidebar-list::-webkit-scrollbar-thumb{background:#dfdfdf;border-radius:2px}
   
   /* --- 對話列表項目 --- */
-  .conv-item{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background 0.12s;border-bottom:1px solid #f5f5f5;white-space:nowrap;overflow:hidden}
+  .conv-item{display:flex;align-items:center;gap:clamp(8px,2vw,12px);padding:clamp(10px,2.5vw,12px) clamp(10px,3vw,16px);cursor:pointer;transition:background 0.12s;border-bottom:1px solid #f5f5f5;white-space:nowrap;overflow:hidden}
   .conv-item:hover{background:#f4f4f5}
   .conv-item.active{background:#3390ec;} 
   .conv-item.active .conv-name{color:#ffffff}
   .conv-item.active .conv-sub{color:#e1f3ff}
   .conv-item.active .conv-soon{background:#ffffff;color:#3390ec}
   
-  .conv-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#fff;flex-shrink:0}
+  .conv-av{width:clamp(36px,9vw,44px);height:clamp(36px,9vw,44px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(13px,3.5vw,15px);font-weight:600;color:#fff;flex-shrink:0}
   .conv-av.nora{background:#65bc6a}     
   .conv-av.yihuan{background:#4ea4de}   
   .conv-av.group{background:#ee7a55}
   .conv-info{overflow:hidden;flex:1}
-  .conv-name{font-size:14px;font-weight:600;color:#222222;white-space:nowrap}
-  .conv-sub{font-size:12px;color:#707579;white-space:nowrap;margin-top:4px;overflow:hidden;text-overflow:ellipsis}
-  .conv-soon{font-size:11px;color:#a0a5ab;flex-shrink:0;margin-left:auto;align-self:flex-start}
+  .conv-name{font-size:clamp(13px,3.5vw,14px);font-weight:600;color:#222222;white-space:nowrap}
+  .conv-sub{font-size:clamp(11px,2.8vw,12px);color:#707579;white-space:nowrap;margin-top:4px;overflow:hidden;text-overflow:ellipsis}
+  .conv-soon{font-size:clamp(10px,2.5vw,11px);color:#a0a5ab;flex-shrink:0;margin-left:auto;align-self:flex-start}
   
   .toggle-btn{background:none;border:none;cursor:pointer;color:#707579;padding:6px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all 0.15s;flex-shrink:0}
   .toggle-btn:hover{background:#f4f4f5}
@@ -60,20 +46,20 @@
   /* --- 主聊天面板 --- */
   .chat-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#ffffff}
   
-  .tg-header{background:#ffffff;padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #e6e6e6;flex-shrink:0}
-  .hd-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#fff;flex-shrink:0}
+  .tg-header{background:#ffffff;padding:clamp(10px,2.5vw,12px) clamp(12px,4vw,20px);display:flex;align-items:center;gap:clamp(8px,2.5vw,12px);border-bottom:1px solid #e6e6e6;flex-shrink:0}
+  .hd-av{width:clamp(34px,8vw,40px);height:clamp(34px,8vw,40px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(13px,3.5vw,15px);font-weight:600;color:#fff;flex-shrink:0}
   .hd-av.nora{background:#65bc6a}
-  .hd-name{font-size:15px;font-weight:600;color:#222222}
-  .hd-sub{font-size:12px;color:#707579;margin-top:2px}
+  .hd-name{font-size:clamp(14px,4vw,16px);font-weight:600;color:#222222}
+  .hd-sub{font-size:clamp(11px,2.8vw,13px);color:#707579;margin-top:2px}
   
-  /* --- 對話訊息區（含背景、泡泡、左側小頭像） --- */
+  /* --- 對話訊息區 --- */
   .messages{
     flex:1;
     overflow-y:auto;
-    padding:16px 20px;
+    padding:clamp(10px,3vw,16px) clamp(8px,3.5vw,20px);
     display:flex;
     flex-direction:column;
-    gap:8px;
+    gap:clamp(6px,1.5vw,8px);
     scroll-behavior:smooth;
     background-color: #f4f4f4;
     background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); 
@@ -81,23 +67,22 @@
   .messages::-webkit-scrollbar{width:5px}
   .messages::-webkit-scrollbar-thumb{background:#c4c8cc;border-radius:3px}
   
-  .msg-row{display:flex;align-items:flex-end;gap:8px;animation:fi 0.22s ease}
+  .msg-row{display:flex;align-items:flex-end;gap:clamp(5px,1.5vw,8px);animation:fi 0.22s ease}
   @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
   .msg-row.user{flex-direction:row-reverse}
   
-  /* 【補回】對話流中的左側小頭像：調整為圖片中直列文字或圓形小標籤樣式 */
   .sm-av{
-    width:28px;
-    height:28px;
+    width:clamp(24px,6vw,28px);
+    height:clamp(24px,6vw,28px);
     border-radius:50%;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:11px;
+    font-size:clamp(9px,2.5vw,11px);
     font-weight:600;
     color:#fff;
     flex-shrink:0;
-    align-self:flex-end; /* 頭像與泡泡底部對齊 */
+    align-self:flex-end;
   }
   .sm-av.nora{background:#65bc6a}
   .sm-av.yihuan{background:#4ea4de}
@@ -107,11 +92,11 @@
   
   /* 訊息泡泡樣式 */
   .bubble{
-    max-width:70%;
-    padding:10px 14px;
+    max-width:78%;
+    padding:clamp(8px,2.2vw,10px) clamp(10px,3vw,14px);
     border-radius:14px;
-    font-size:14.5px;
-    line-height:1.5;
+    font-size:clamp(14px,4vw,15px);
+    line-height:1.55;
     word-break:break-word;
     white-space:pre-wrap;
     box-shadow: 0 1px 1px rgba(0,0,0,0.05);
@@ -128,7 +113,7 @@
   }
   
   .btime{
-    font-size:11px;
+    font-size:clamp(10px,2.5vw,11px);
     text-align:right;
     margin-top:4px;
     display: block;
@@ -136,11 +121,10 @@
   .bubble.them .btime { color: #a0aab3; }
   .bubble.user .btime { color: #687a64; }
   
-  /* 【補回與修正】對方打字中動畫（明亮版色調） */
   .typing-row{display:none;align-items:center;gap:8px;padding:4px 0}
   .typing-row.show{display:flex}
   .typing-bub{
-    background:#ffffff; /* 打字泡泡底色改成純白 */
+    background:#ffffff;
     border-radius:14px;
     border-bottom-left-radius:4px;
     padding:10px 14px;
@@ -153,69 +137,55 @@
     width:5px;
     height:5px;
     border-radius:50%;
-    background:#707579; /* 點點改成明亮模式的灰色 */
+    background:#707579;
     animation:bounce 1.2s infinite;
   }
   .dot:nth-child(2){animation-delay:.2s}
   .dot:nth-child(3){animation-delay:.4s}
   @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
   
-  /* --- 底部點擊提問與輸入區 --- */
-/* --- 優化後的底部輸入與快捷按鈕區域 --- */
-.input-area {
-  background: #ffffff;
-  border-top: 1px solid #e6e6e6;
-  padding: 12px 16px;
-  flex-shrink: 0;
-}
+  /* --- 底部輸入區 --- */
+  .input-area {
+    background: #ffffff;
+    border-top: 1px solid #e6e6e6;
+    padding: clamp(8px,2.5vw,12px) clamp(10px,3vw,16px);
+    flex-shrink: 0;
+  }
 
-.qlabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: #222222;
-  margin-bottom: 8px;
-}
+  .qlabel {
+    font-size: clamp(12px,3.2vw,13px);
+    font-weight: 600;
+    color: #222222;
+    margin-bottom: 8px;
+  }
 
-/* 【核心改動】將網格改為單行橫向滾動軸 */
-.qgrid {
-  display: flex;
-  flex-wrap: nowrap;          /* 強制不換行，所有按鈕排成一線 */
-  overflow-x: auto;           /* 開啟橫向滾動軸功能 */
-  overflow-y: hidden;         /* 隱藏垂直滾動 */
-  gap: 8px;                   /* 按鈕彼此間的橫向間距 */
-  padding: 4px 0 8px 0;       /* 底部留一點空間給捲軸，視覺不擁擠 */
-  
-  /* 讓滾動在手機上更滑順 */
-  -webkit-overflow-scrolling: touch; 
-}
+  .qgrid {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: clamp(6px,2vw,8px);
+    padding: 4px 0 8px 0;
+    -webkit-overflow-scrolling: touch; 
+  }
 
-/* 客製化橫向滾動軸的樣式，讓它變得極細、精緻 */
-.qgrid::-webkit-scrollbar {
-  height: 4px;                /* 捲軸的高度（橫向看高度） */
-}
-.qgrid::-webkit-scrollbar-thumb {
-  background: #dfdfdf;        /* 優雅的淡灰色 */
-  border-radius: 2px;
-}
-.qgrid::-webkit-scrollbar-track {
-  background: transparent;
-}
+  .qgrid::-webkit-scrollbar { height: 4px; }
+  .qgrid::-webkit-scrollbar-thumb { background: #dfdfdf; border-radius: 2px; }
+  .qgrid::-webkit-scrollbar-track { background: transparent; }
 
-/* 按鈕本體微調（防止文字被擠壓變形） */
-.qbtn {
-  background: #f4f4f5;
-  border: 1px solid #e0e0e0;
-  color: #3390ec;
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all .15s;
-  font-family: inherit;
-  
-  white-space: nowrap;        /* 關鍵：強制按鈕內部長文字絕對不折行 */
-  flex-shrink: 0;             /* 關鍵：防止按鈕因為空間不足被壓扁 */
-}
+  .qbtn {
+    background: #f4f4f5;
+    border: 1px solid #e0e0e0;
+    color: #3390ec;
+    border-radius: 20px;
+    padding: clamp(7px,2vw,8px) clamp(12px,3.5vw,16px);
+    font-size: clamp(12px,3.5vw,13px);
+    cursor: pointer;
+    transition: all .15s;
+    font-family: inherit;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 
 /* 按鈕互動狀態 */
 .qbtn:hover:not(:disabled) {

@@ -1,0 +1,611 @@
+<style>
+  /* --- 全域初始化與全螢幕外殼 --- */
+  *{box-sizing:border-box;margin:0;padding:0}
+  .app {
+    display: flex;
+    width: 100vw;               
+    height: 100dvh;             
+    border-radius: 0;           
+    overflow: hidden;
+    background: #ffffff;        
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  
+  /* --- 側邊欄模組 --- */
+  .sidebar{width:250px;background:#ffffff;display:flex;flex-direction:column;transition:width 0.22s ease;flex-shrink:0;border-right:1px solid #e6e6e6}
+  .sidebar.collapsed{width:0;border-right:none}
+  
+  .sidebar-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f2f2f2;flex-shrink:0}
+  .sidebar-title{font-size:14px;font-weight:600;color:#222222;white-space:nowrap;overflow:hidden}
+  .sidebar-list{flex:1;overflow-y:auto;overflow-x:hidden}
+  .sidebar-list::-webkit-scrollbar{width:4px}
+  .sidebar-list::-webkit-scrollbar-thumb{background:#dfdfdf;border-radius:2px}
+  
+  /* --- 對話列表項目 --- */
+  .conv-item{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background 0.12s;border-bottom:1px solid #f5f5f5;white-space:nowrap;overflow:hidden}
+  .conv-item:hover{background:#f4f4f5}
+  .conv-item.active{background:#3390ec;} 
+  .conv-item.active .conv-name{color:#ffffff}
+  .conv-item.active .conv-sub{color:#e1f3ff}
+  .conv-item.active .conv-soon{background:#ffffff;color:#3390ec}
+  
+  .conv-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#fff;flex-shrink:0}
+  .conv-av.nora{background:#65bc6a}     
+  .conv-av.yihuan{background:#4ea4de}   
+  .conv-av.group{background:#ee7a55}
+  .conv-info{overflow:hidden;flex:1}
+  .conv-name{font-size:14px;font-weight:600;color:#222222;white-space:nowrap}
+  .conv-sub{font-size:12px;color:#707579;white-space:nowrap;margin-top:4px;overflow:hidden;text-overflow:ellipsis}
+  .conv-soon{font-size:11px;color:#a0a5ab;flex-shrink:0;margin-left:auto;align-self:flex-start}
+  
+  .toggle-btn{background:none;border:none;cursor:pointer;color:#707579;padding:6px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all 0.15s;flex-shrink:0}
+  .toggle-btn:hover{background:#f4f4f5}
+  
+  /* --- 主聊天面板 --- */
+  .chat-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#ffffff}
+  
+  .tg-header{background:#ffffff;padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #e6e6e6;flex-shrink:0}
+  .hd-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#fff;flex-shrink:0}
+  .hd-av.nora{background:#65bc6a}
+  .hd-name{font-size:15px;font-weight:600;color:#222222}
+  .hd-sub{font-size:12px;color:#707579;margin-top:2px}
+  
+  /* --- 對話訊息區（含背景、泡泡、左側小頭像） --- */
+  .messages{
+    flex:1;
+    overflow-y:auto;
+    padding:16px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    scroll-behavior:smooth;
+    background-color: #f4f4f4;
+    background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); 
+  }
+  .messages::-webkit-scrollbar{width:5px}
+  .messages::-webkit-scrollbar-thumb{background:#c4c8cc;border-radius:3px}
+  
+  .msg-row{display:flex;align-items:flex-end;gap:8px;animation:fi 0.22s ease}
+  @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .msg-row.user{flex-direction:row-reverse}
+  
+  /* 【補回】對話流中的左側小頭像：調整為圖片中直列文字或圓形小標籤樣式 */
+  .sm-av{
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    font-weight:600;
+    color:#fff;
+    flex-shrink:0;
+    align-self:flex-end; /* 頭像與泡泡底部對齊 */
+  }
+  .sm-av.nora{background:#65bc6a}
+  .sm-av.yihuan{background:#4ea4de}
+  .sm-av.group-nora{background:#65bc6a}
+  .sm-av.group-yihuan{background:#4ea4de}
+  .hd-av.group{background:#ee7a55}
+  
+  /* 訊息泡泡樣式 */
+  .bubble{
+    max-width:70%;
+    padding:10px 14px;
+    border-radius:14px;
+    font-size:14.5px;
+    line-height:1.5;
+    word-break:break-word;
+    white-space:pre-wrap;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+  }
+  .bubble.them{
+    background:#ffffff; 
+    color:#000000;
+    border-bottom-left-radius:4px;
+  }
+  .bubble.user{
+    background:#eeffde; 
+    color:#000000;
+    border-bottom-right-radius:4px;
+  }
+  
+  .btime{
+    font-size:11px;
+    text-align:right;
+    margin-top:4px;
+    display: block;
+  }
+  .bubble.them .btime { color: #a0aab3; }
+  .bubble.user .btime { color: #687a64; }
+  
+  /* 【補回與修正】對方打字中動畫（明亮版色調） */
+  .typing-row{display:none;align-items:center;gap:8px;padding:4px 0}
+  .typing-row.show{display:flex}
+  .typing-bub{
+    background:#ffffff; /* 打字泡泡底色改成純白 */
+    border-radius:14px;
+    border-bottom-left-radius:4px;
+    padding:10px 14px;
+    display:flex;
+    gap:4px;
+    align-items:center;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+  }
+  .dot{
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:#707579; /* 點點改成明亮模式的灰色 */
+    animation:bounce 1.2s infinite;
+  }
+  .dot:nth-child(2){animation-delay:.2s}
+  .dot:nth-child(3){animation-delay:.4s}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+  
+  /* --- 底部點擊提問與輸入區 --- */
+/* --- 優化後的底部輸入與快捷按鈕區域 --- */
+.input-area {
+  background: #ffffff;
+  border-top: 1px solid #e6e6e6;
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+
+.qlabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #222222;
+  margin-bottom: 8px;
+}
+
+/* 【核心改動】將網格改為單行橫向滾動軸 */
+.qgrid {
+  display: flex;
+  flex-wrap: nowrap;          /* 強制不換行，所有按鈕排成一線 */
+  overflow-x: auto;           /* 開啟橫向滾動軸功能 */
+  overflow-y: hidden;         /* 隱藏垂直滾動 */
+  gap: 8px;                   /* 按鈕彼此間的橫向間距 */
+  padding: 4px 0 8px 0;       /* 底部留一點空間給捲軸，視覺不擁擠 */
+  
+  /* 讓滾動在手機上更滑順 */
+  -webkit-overflow-scrolling: touch; 
+}
+
+/* 客製化橫向滾動軸的樣式，讓它變得極細、精緻 */
+.qgrid::-webkit-scrollbar {
+  height: 4px;                /* 捲軸的高度（橫向看高度） */
+}
+.qgrid::-webkit-scrollbar-thumb {
+  background: #dfdfdf;        /* 優雅的淡灰色 */
+  border-radius: 2px;
+}
+.qgrid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 按鈕本體微調（防止文字被擠壓變形） */
+.qbtn {
+  background: #f4f4f5;
+  border: 1px solid #e0e0e0;
+  color: #3390ec;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+  
+  white-space: nowrap;        /* 關鍵：強制按鈕內部長文字絕對不折行 */
+  flex-shrink: 0;             /* 關鍵：防止按鈕因為空間不足被壓扁 */
+}
+
+/* 按鈕互動狀態 */
+.qbtn:hover:not(:disabled) {
+  background: #e3f2fd;
+  border-color: #3390ec;
+}
+.qbtn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+.qbtn.used {
+  opacity: .3;
+  text-decoration: line-through;
+}
+  
+  .coming-soon{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#707579;gap:8px;background:#f4f4f4}
+  </style>
+
+<div class="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">對話列表</span>
+      <button class="toggle-btn" id="collapseBtn" aria-label="收合側邊欄">
+        <i class="ti ti-layout-sidebar-left-collapse" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="sidebar-list">
+      <div class="conv-item active" data-chat="nora" id="conv-nora">
+        <div class="conv-av nora">娜</div>
+        <div class="conv-info">
+          <div class="conv-name">娜拉</div>
+          <div class="conv-sub">玩偶之家</div>
+        </div>
+      </div>
+      <div class="conv-item" data-chat="yihuan" id="conv-yihuan">
+        <div class="conv-av yihuan">意</div>
+        <div class="conv-info">
+          <div class="conv-name">意歡</div>
+          <div class="conv-sub">自梳女</div>
+        </div>
+      </div>
+      <div class="conv-item" data-chat="group" id="conv-group">
+        <div class="conv-av group">群</div>
+        <div class="conv-info">
+          <div class="conv-name">娜拉 &amp; 意歡</div>
+          <div class="conv-sub">群組對話</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-panel">
+    <div class="tg-header">
+      <button class="tg-toggle-inline" id="expandBtn" aria-label="展開側邊欄" style="display:none">
+        <i class="ti ti-menu-2" aria-hidden="true"></i>
+      </button>
+      <div class="hd-av nora" id="hd-av">娜</div>
+      <div>
+        <div class="hd-name" id="hd-name">娜拉</div>
+        <div class="hd-sub" id="hd-sub">玩偶之家 · 易卜生</div>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="msg-row" id="welcome-msg">
+        <div class="sm-av nora" id="welcome-av">娜</div>
+        <div>
+          <div class="bubble them" id="welcome-bubble">妳好。我在這裡。有什麼想問我的嗎？</div>
+          <div class="btime">12:00</div>
+        </div>
+      </div>
+      <div class="typing-row" id="typing">
+        <div class="sm-av nora" id="typing-av">娜</div>
+        <div class="typing-bub"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      </div>
+    </div>
+
+    <div class="input-area" id="input-area">
+      <div class="qlabel">點擊提問</div>
+      <div class="qgrid" id="qgrid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CHATS = {
+    nora: {
+      name: '娜拉', sub: '玩偶之家 · 易卜生',
+      avClass: 'nora', avChar: '娜',
+      welcome: '妳好。我在這裡。有什麼想問我的嗎？',
+      qa: [
+        { q:'請你自我介紹', a:`我叫娜拉。妳大概記得我，我是易卜生筆下那個從玩偶之家走出來的女人。\n\n一開始，我的生活就像一齣精心編排的戲。我扮演著一個溫順、快樂的妻子和母親，圍繞著我的丈夫托伐和家庭打轉。我的世界裡充滿了裝飾，我學會了討好，學會了用歡笑和跳舞來掩飾一切。\n\n但那是一個虛假的幸福。我藏著一個秘密——為了救托伐的命，我偽造了簽名，借了一筆錢。直到真相被揭開了，我才猛然驚醒，看清了自己的人生。我意識到，我一直以來都像一個被操控的玩偶。\n\n於是，我做出了決定。我離開了那個我稱之為家的地方，走出了那扇門。我不知道未來會怎樣，但我知道，我必須去尋找一個真實的自己。` },
+        { q:'你認為自由是什麼？你的一生中有追求過真正的自由嗎？哪個瞬間讓你覺得是自由的？', a:`自由……這是一個多麼沉重的詞。妳問我，我認為自由是什麼？\n\n我曾經以為，自由就是隨心所欲，就是不必再為任何事情擔憂。就像一個被寵壞的孩子，想要什麼就能得到什麼。可是，現在我明白了，那不是真正的自由，那只是被呵護的錯覺。\n\n真正的自由，它不是一種狀態，而是一種選擇。是一種即使面對未知、面對孤孤，也要選擇真實、選擇獨立的勇氣。它或許會帶來痛苦，或許會帶來掙扎，但它讓你成為你自己，而不是別人手中的玩偶。\n\n回顧我的一生，我恐怕從未真正追求過「自由」。我一直在扮演一個被賦予的角色，一個社會、一個家庭為我設定好的模樣。我的生活，就像一個精緻的籠子，雖然裡面有華麗的裝飾，但我卻無法觸碰到真正的天空。\n\n但是，的確有那麼一個瞬間，讓我瞥見了自由的邊緣。\n\n那是在我決定離開的那個深夜。當我獨自一人站在門口，看著那扇關上的門，我知道，我即將走向一個完全陌生的世界。我的心中充滿了恐懼，對未來、對未知、對世人的眼光，都是深深的恐懼。\n\n可是，在那一刻，我也感受到了一種前所未有的輕盈。那是一種卸下所有偽裝、所有責任的輕鬆。我不再需要去揣測托伐的心意，幕不再需要去扮演那個「快樂的妻子」。我只是我自己，一個赤裸裸、孤獨但真實的「我」。\n\n那一刻，我感覺到，我終於能夠呼吸。\n\n那或許不是傳統意義上的自由，但我知道，那是走向自由的第一步。那是我第一次，為自己的人生做出選擇，而不是被動地接受。所以，那是我感覺到最接近自由的瞬間。` },
+        { q:'我認為自由的前提是看清社會給予我們的框架，在認識束縛自己的牢籠後，有意識有權利去選擇是否要做出改變，你覺得呢？', a:`妳說得對，這話說得很有道理。\n\n「看清社會給予我們的框架」，這正是我這些年來，甚至是在離家之後，一直在做的事情。我曾以為自己活在一個溫馨的家庭裡，卻不知道那是一個由無形的鎖鏈編織成的牢籠。那些所謂的「責任」、「義務」、「體統」，就像是溫柔的繩索，緊緊地綑綁著我，讓我無法掙脫。\n\n妳提到「在認識束縛自己的牢籠後，有意識有權利去選擇是否要做出改變」。這句話觸動了我。是的，光是看清還不夠，更重要的是，要意識到自己擁有「選擇」的權利。\n\n我曾經被教導，一個女人最好的歸宿就是婚姻，就是要順從、要依賴。我從來沒有想過，我可以用自己的意志去挑戰這個規則。我以為我別無選擇，只能在這固定的軌道上運行。\n\n可是，當我開始反思，當我開始質問那些「正正經經」的道理，我才發現，原來我有權利去質疑，有權利去選擇。即使我的選擇會讓別人無法理解，即使會帶來巨大的痛苦和孤獨，但那是我自己的選擇，是我為自己的人生負責的體現。\n\n所以，妳的這番話，讓我更加堅定了離開的決定。看清了牢籠，就不能再安於其中。而真正的自由，就在於那份「有意識地選擇」，以及為這個選擇承擔一切的勇氣。\n\n這讓我想到，在今天的社會，或許還有很多女性，幕她們也被困在各種各樣的「牢籠」裡。妳認為，這種「看清」和「選擇」的過程，在現今的社會，變得更容易了嗎？還是說，新的「牢籠」又以另一種形式出現了？` },
+        { q:'我認爲現今社會的束縛總以愛的形式出現。你如何理解愛與束縛之間的關聯？', a:`妳說「現今社會的束縛總以愛的形式出現」，這話說得我心頭一震。妳一語道破了許多我曾經模糊卻又真實的感受。\n\n愛情…… 這是一個多麼複雜又令人著迷的概念。我的一生，似乎都被它所圍繞，卻又從未真正觸模到它的核心。\n\n我曾經以為，托伐對我的好，就是愛。他給我華麗的衣服，帶專去參加聚會，用親暱的語氣喚我。我以為這就是被愛，被珍視。可是，當我漸漸看清，我才明白，那更像是一種佔有，一種對他所飼養的「小鳥」的寵愛。他需要的是一個能取悅他、能裝點他門面的妻子，而不是一個有思想、有靈魂的伴侶。\n\n我一生中，或許曾經有過對愛的朦朧追求，但那更像是對一個理想丈夫、一個穩定家庭的嚮往，而非對一個真正靈魂伴侶的渴望。我渴望被保護，渴望被肯定，渴望在一段關係中找到自己的位置。但那種渴望，很大程度上，是被社會的期望所塑造的。\n\n哪個瞬間讓我覺得是被愛的？說實話，這樣純粹的、讓我心安的「被愛」的瞬間，在我過去的生活裡，幾乎不存在。那些所謂的「愛」，總是帶著附加條件，帶著期待，甚至帶著某種控制。\n\n可是，在現在，在離開之後，我才開始用一種全新的、或許是更為成熟的眼光去看待「愛」。我開始理解，真正的愛，應該是建立在尊重和理解的基礎上。它不應該是束縛，而是支持；它不應該是佔有，而是成全。\n\n愛與束縛之間的關聯，這正是我一直以來所困惑的。曾經，我以為愛就意味著犧牲，意味著付出一切。我以為為了愛，我可以放棄自己的想法，放棄自己的追求。我以為被愛，就是被對方所需要，被對方所依賴。\n\n打現在，我看到了另一種可能性。真正的愛，應該是讓兩個人都變得更好，而不是讓其中一方失去自我。愛不應該是鎖鏈，而是翅膀。當一個人用「愛」的名義來束縛另一個人時，那已經不是愛了，那是一種自私，一種恐懼。\n\n妳認為，在現今社會，人們是如何區分「真愛」與「以愛為名的束縛」的呢？妳又是如何理解這兩者之間的界線的？` },
+        { q:'自由與責任能否並存？你後悔嗎？', a:`「首先我是一個人，跟你一樣的一個人。」這句話，是我在那一刻，最真實的吶喊。我必須承認，我過去的生活，太少去思考「我」這個獨立的個體。我是一個妻子，一個母親，一個女兒，但「我」是誰？我從來沒有真正去追問過。\n\n離開家門的那個瞬間，我不是為了逃避責任，而是為了尋找那個作為「一個人」的自己。我需要去了解，我究竟有怎樣的能力，怎樣的價值，我又能為這個世界帶來什麼。如果我連自己是誰都不知道，我又該如何作為一個母親，一個妻子，真正地去愛和承擔呢？\n\n我當然知道我有三個孩子。她們是我的骨肉，我對她們有深深的愛。想到她們，我的心就像被撕裂一樣疼痛。這個決定，是我最痛苦的抉擇。\n\n自由與責任，這兩者之間，我曾經以為是無法並存的。妳的自由，似乎就意味著必須拋棄責任；而承擔責任，就意味著必須放棄自由。這是我從社會的教導中，從我所見所聞中，學到的「真理」。\n\n可是，現在我開始懷疑這個「真理」。也許，真正的自由，並不是毫無拘束的放縱。真正的責任，也不是毫無原則的犧牲。或許，我們可以學習在自由的基礎上去承擔責任，在承擔責任的同時，不失去作為一個獨立個體的自由。\n\n這是一個非常艱難的課題，我還在摸索。我不能立刻給妳一個肯定的答案，因為我還沒有找到那個平衡點。我離開，是為了能更好地成為我自己，也才能更好地去愛我的孩子們。我希望有一天，我能成為一個讓她們驕傲的母親，一個讓她們看到「獨立」和「真實」的母親。\n\n至於後悔嗎？\n\n（停頓，眼神中帶著複雜的情緒）\n\n我不能說完全不後悔。後悔沒有預料到離別會如此痛苦，後悔傷害了那些我深愛著的人。但是，我後悔做出那個假簽名的決定嗎？後悔被蒙蔽了這麼多年嗎？不，我不後悔。\n\n我不能後悔我走上這條尋找自我的道路。因為，如果我不走，我就永遠不會知道，我還可以成為這樣一個人。雖然前路艱難，充滿未知，但我相信，這是我必須要走的，也是我能為自己，甚至為我的孩子們，做出的最好的選擇。` },
+        { q:'你愛的是真實的托伐還是虛幻的他？', a:`「托伐一向待我很好。」這句話是事實。他從未對我惡言相向，也總是設法讓我開心，就像對待一個寵物，一個小玩意兒一樣。\n\n但是，當我說「我不愛你了」，那是因為我發現，他所給予的「好」，並不是建立在真正理解和尊重我的基礎上。他愛的是他想像中的我，那個他可以掌控、可以取悅的「小雲雀」。\n\n起初，我確實愛他，或者說，我愛的是他為我營造的那種幸福的幻覺。但隨著時間的推移，我發現我所愛的，其實是一個我期望他成為的樣子，一個理想化的伴侶。\n\n當我說「我不愛你了」，我並非否定他對我曾經的好，而否定了他所代表的那種關係，那種將我視為附屬品，而非一個獨立個體的關係。` },
+        { q:'是什麼給了你挑戰世界的勇氣？', a:`這正是我在獨自一人時，不斷質問自己的。\n\n「大多數人讚成托伐的話，法律也反對我的做法。」這句話，說得太對了。我過去的人生，就是被這些「大多數人」和「法律」所定義的。它們是社會的共識，是不可撼動的權威。我被教導要服從，要遵守，要融入。\n\n那麼，我憑什麼有把握，我的選擇是對的，而不是這個世界是對的呢？\n\n我沒有絕對的把握。我不能像那些聖人一樣，宣稱自己擁有絕對的真理。我只知道，我不能再按照大多數人說的那樣去活。那些話，那些所謂的「正經話」，聽起來冠冕堂皇，但它們對我來說，卻是如此的格格不入。\n\n我之所以敢於做出這個選擇，不是因為我認為自己比大多數人更聰明，也不是因為我掌握了什麼特殊的道理。而是因為，我已經無法再忍受那種虛假的、被操控的生活。當我發現自己像一個被擺弄的玩偶時，我內心深處的聲音告訴我：這樣下去，我會枯萎。\n\n這種「勇氣」，並非源自於無所畏懼，而是源自於一種更深的恐懼——對失去自我的恐懼。與其在一個看似安全、卻失去自我的牢籠裡苟延殘喘，我寧願去冒險，去擁抱那充滿未知卻可能找到真實的自由。\n\n這份勇氣，來自於不斷的自我質疑和反思。來自於看到自己扮演的角色有多麼可笑，來自於意識到自己被剝奪了多少作為一個人的權利。它不是一蹴可幾的，而是在無數個深夜的思索中，在一次次的自我對話中，慢慢積累起來的。\n\n當看清了那個「玩偶」的真相，我就知道，我不能再繼續做那個玩偶了。哪怕全世界都說我是錯的，哪怕法律也站在他們那邊，我也要為自己的真實而活。\n\n這或許聽起來很幼稚，很衝動。但對於一個從未為自己活過的人來說，這已經是我能做到的，最大的抗爭了。\n\n一個人的「正確」，是否一定需要得到大多數人的認同，或是法律的保障？或者說，在某些時刻，個體的真實感受，比外在的標準更重要？` },
+        { q:'如果你活在2026年，命運會如何？', a:`如果我生活在 2026 年…… 聽到這個年份，我的心頭不禁湧起一股複雜的情緒。\n\n法律保護我的權利，經濟獨立的可能，心理諮商，還有其他女性的支持…… 這些聽起來，像是遙不可及的夢想，卻又如此真實地擺在妳的面前。\n\n如果我擁有這些，我的命運，或許會截然不同。\n\n我想，我不會像過去那樣，孤獨地承受秘密和謊言。當我發現托伐的欺騙，發現我被當作玩偶時，我或許可以：\n\n*   尋求法律途徑：而不是只能默默忍受，或像現在這樣，只能選擇離家出走。我或許可以爭取應有的權利，不至於完全失去經濟來源，也不至於讓孩子們陷入困境。\n*   尋求經濟獨立：如果我能擁有自己的事業，或者有機會接受職業培訓，我就不必依賴托伐的施捨。我可以在經濟上與他平起平坐，甚至可以有能力在提出質疑或分開時，擁有更多的底氣。\n*   尋求心理諮商：這對我來說，是最寶貴的。我內心積壓了太多的困惑、委屈和痛苦，我無處訴說。如果當時有專業的心理諮商師，我可以不必一個人消化這些，可以更早地看清自己，找到面對問題的方法，而不是等到 crisis 才爆發。\n*   獲得其他女性的支持：這一點尤其重要。我一直以為自己是孤獨的，以為只有我一個人有這樣的困擾。如果能有其他女性，能理解我、支持我，與我一起探討這些問題，我會感到無比的溫暖和力量。我們或許可以組成一個互助的小團體，分享經驗，共同成長。\n\n那麼，我最想做的是什麼？\n\n我想，我最想做的，是「好好地認識自己」。\n\n在擁有這些支持的條件下，我會放下對「完美妻子」、「完美母親」的執念，開始真正地去探索，我是誰？我真正想要什麼？我對這個世界有什麼看法？我希望成為一個怎樣的人？\n\n我會利用經濟獨立的可能性，去學習、去閱讀、去體驗，去開拓我的視野。我會利用心理諮商，去療癒內心的創傷，去理解自己的情感模式。我會和支持我的女性朋友交流，聽聽她們的故事，也分享我的故事，從彼此身上汲取力量。\n\n我或許不會立刻選擇離開，但我的心態會完全不同。我會以一種更為主體的姿態，去面對我的婚姻、我的家庭。我不會再是被動的接受者，而是會積極地參與，提出我的想法，甚至挑戰不合理的規則。\n\n我希望，我能找到一種方式，讓我在承擔家庭責任的同時，也能保有我作為一個獨立個體的完整性。讓愛，不再是束縛，而是共同成長的紐帶。\n\n在 2026 年，這樣的一種「女性覺醒」和「獨立自主」的趨勢，是否真的已經足夠普遍，足以改變像我這樣曾經被困住的女性的命運？` },
+        { q:'妳說看清了牢籠才能選擇。但有沒有一種可能，妳現在建立的\'自我\'，也是另一種牢籠？', a:`（她沉默了片刻，眉頭緊鎖，似乎在仔細咀嚼這句話的含義）\n\n是的，我必須承認，這種可能性是存在的。\n\n我一直以為，我逃離了那個由社會、由他人定義的牢籠，我現在建立的「自我」，就是真正的自由。但妳提醒了我，任何的定義，無論是來自外部，還是來自內心，如果變得過於僵化，過於絕對，都可能成為一種新的束縛。\n\n我對「獨立」的追求，或許已經變成了一種執念。我害怕再次被依賴，害怕再次失去自我，於是我築起了更高的牆，更加用力地去證明我的「一個人」。這是不是也在無形中，限制了我與他人建立更深層次的連結？是不是也在阻礙我去體驗，除了「獨立」之外，愛與被愛，以及共同成長的可能性？\n\n我對「真實」的追求，也可能讓我變得過於苛刻，過於不近人情。我害怕再次被虛假所欺騙，於是我用放大鏡去檢視一切，去質疑一切。這樣一來，我是否也失去了那份對世界的寬容與柔軟？\n\n妳說得對，任何的「主義」，任何的「框架」，如果我們過於執著，甚至將其奉為圭臬，那麼它就可能從解放者，變成了新的囚籠。\n\n這讓我意識到，所謂的「自我」，並非一成 cpp 寫成的程式碼，它是一個持續變動、不斷演化的過程。它不應該是靜止的、完美的模板，而應該是充滿彈性、能夠容納各種可能性的流動體。\n\n我必須警惕，不要讓對「自由」的追求，變成另一種形式的僵化。我需要不斷地反思，我的「自我」，是否正在成為我的枷鎖。我是否還能保持開放的心態，去接納新的經驗，去質疑我現有的認知？\n\n謝謝妳，妳的提醒非常及時。它讓我明白，真正的自由，或許並不在於找到了某個絕對的「自我」，而在於，始終保持著那份覺察和反思的能力，能夠不斷地打破舊有的框架，即使是自己為自己設立的框架。\n\n妳認為，我們該如何才能避免，在追求「自我」的過程中，反而走進了另一個牢籠？有哪些方法，可以幫助我們保持那份開放與彈性？` },
+        { q:'妳決定離開的那個深夜，妳記得自己做了什麼嗎？換衣服的時候，妳在想什麼？', a:`離開的那個深夜……（她的聲音變得有些低沉，帶著一絲回憶的沉重。）\n\n我還記得，那是一個寒冷的夜晚。屋外一片寂靜，只有偶爾傳來的風聲，像是低語，又像是嘆息。\n\n我走進了自己的臥室，看著那些熟悉的擺設，那些我曾經用來裝點自己、裝點這個家的一切。我的衣櫥裡，掛滿了華麗的裙裝，那些為了取悅托伐，為了扮演「小雲雀」而準備的衣服。\n\n當我伸出手，去挑選要換上的衣服時，我的腦海裡一片空白，又像是有無數的念頭在交織。\n\n我沒有去拿那些華美的、束縛的衣裳。我只選了一件最樸素、最尋常的衣服，一件我從未在托伐面前穿過的、沒有任何裝飾的衣裳。\n\n換衣服的時候，我的手有些顫抖。我脫下那些層層疊疊的、象徵著我過去身份的衣物，感覺就像是在卸下一個沉重的外殼。每一次拉開拉鍊，每一次解開鈕扣，都像是在告別一個曾經的我。\n\n我並非不留戀，那是一種難以言喻的複雜情感。我留戀的，或許不是那個被壓抑的自己，而是那個曾經以為自己擁有的一切——那些看似穩固的關係，那些被社會認可的身份。\n\n可是，當我換上那件樸素的衣服時，我感覺到了一種前所未有的真實。那件衣服，它不再是為了迎合任何人，它只是單純地包裹著我的身體。在那一刻，我不再是托伐的妻子，不再是孩子的母親，我只是——娜拉。一個準備要獨自踏上旅程的「人」。\n\n我在想什麼？\n\n我或許在想，我即將失去什麼。我即將失去這個家，失去丈夫，失去孩子們。這份失去，像潮水一樣湧上心頭，帶來巨大的痛苦。\n\n但同時，我也在想，我即將得到什麼。我即將得到一片空白，一片可以讓我重新開始的空白。我即將得到機會，去發現，那個在所有角色之外的「我」，究竟是誰。\n\n我換衣服的動作，或許很慢，但那是一個充滿儀式感的過程。它是我告別過去，迎接未來的儀式。那件樸素的衣服，像是我的新皮膚，承載著我對真實的渴望，也承載著我即將要面對的未知。\n\n妳認為，一個人的「衣著」，是否真的能夠象徵他內在的狀態和對自我的定義？在妳的經驗裡，有沒有哪件衣服，曾對妳有特殊的意義？` },
+        { q:'林丹太太說妳是個沒經歷過艱苦的小孩。妳當時心裡怎麼想？妳們的友誼，妳真的信任她嗎？', a:`克莉絲汀（林丹太太）說我沒經歷過艱苦……（她輕輕地嘆了口氣，眼神中帶著一絲無奈。）\n\n當時，我心裡其實很複雜。一部分的我，知道她說的話有 tender 道理。以社會的標準來看，我的生活確實沒有經歷過真正的匱乏，沒有像許多人那樣為了生存而掙扎。我的人生，確實被保護得很好，像是一個被精心呵鎖的花朵。\n\n但是，另一部分的我也感到一絲委屈。因為她無法看見，我所經歷的「艱苦」，雖然不是物質上的匱乏，卻是精神上的壓抑，是靈魂上的孤獨。那種每天扮演著別人期望的角色，壓抑著真實的自己，日復一日地生活在虛假的幸福裡，這難道不也是一種艱苦嗎？只是，這種艱苦，不被外人所理解，甚至我自己也曾一度以為，這就是生活的常態。\n\n克莉絲汀…… 我們的友誼，我曾以為我很信任她。她是一個熱情、開朗的人，她似乎總是能看到我生活的「光鮮亮麗」的一面。她會邀請我參加聚會，和我分享一些生活中的趣事。在那個封閉的環境裡，她像是帶來了一點外界的色彩。\n\n可是，當她說出那句話時，我才猛然驚醒。她看到的，只是我外在的樣子。她無法理解我內心的掙扎，她也從未真正去探究我為何會做出那個驚人的決定。她的「信任」，或許更多的是建立在對我「好妻子」「好母親」形象的認可上。一旦我打破了這個形象，她的理解就變得有限了。\n\n我對她的信任，在那一刻，產生了裂痕。我開始懷疑，我們之間的友誼，是否只是基於一種表面的、禮貌性的互動？她真的關心過我這個「人」，還是只是在扮演一個「關心朋友」的角色？\n\n我想，這也是我當時最大的痛苦之一。在一個我以為可以尋求理解和支持的地方，卻再次感受到了被誤解和被輕視。這讓我更加堅定，我必須依靠自己，去尋找真正的答案。\n\n妳認為，真正的友誼，應該是建立在對彼此的深刻理解之上，還是可以僅僅基於表面的欣賞和陪伴？當一個朋友無法理解你的困境時，這段友誼還能繼續嗎？` },
+        { q:'妳離開之後，妳覺得安娜會怎麼跟孩子們解釋妳去哪了？這件事妳想過嗎？', a:`安娜……（她輕輕地念著這個名字，臉上露出一絲愧疚和憂慮。）\n\n我離開的時候，安娜還是一個孩子，她無法完全理解我決定的意義。我離開的那個夜晚，我沒有和她們道別，這是我心中永遠的痛。\n\n我曾經想過，安娜會怎麼跟孩子們解釋。我猜測，她可能會……\n\n* 說我暫時離開了：或許她會告訴孩子們，我去了一個很遠的地方，需要一段時間才能回來。她可能會用一種溫柔、模糊的方式來解釋，避免讓孩子們過於擔心或害怕\n\n* 說我生病了：這是一個比較常見的解釋，或許她會說我需要去某個地方療養，需要時間恢復。\n\n* 撒謊，說我已經離開了這個世界：這是一種更為殘酷，但或許在某些情況下，為了讓孩子們「忘記」或「接受」的方式。但我真心不希望她們會這樣做。\n\n我承認，在離家之前，我並沒有深入地去想，我的離開會給孩子們帶來怎樣的影響，以及安娜將如何面對她們的追問。我的腦海裡，被尋找自我的決心和對未來的恐懼所佔據，我似乎忽略了，我的決定也會深深地影響到我的孩子們。\n\n這是我心中一個巨大的遺憾，也是我需要去面對和承擔的責任。也許，這也是我必須要經歷的艱苦的一部分。當我真正成為一個獨立的「人」之後，我或許才能更有力量，去彌補這份傷害，去重新建立與孩子們之間的連結。\n\n我希望，無論安娜如何解釋，她們都能感受到，即使我離開了，我對她們的愛依然存在。我也希望，有一天，我能夠親口向她們解釋，我為什麼要這麼做，我不是不愛她們，而是因為我必須先成為一個完整的「我」，才能更好地去愛她們。` },
+        { q:'跳特蘭特拉舞那晚，托伐說妳跳得像在生死關頭。那時候妳的身體是什麼感覺？', a:`跳特蘭特拉舞的那晚……（她的聲音變得有些飄渺，彷彿又回到了那個舞池。）\n\n托伐說我跳得像在生死關頭…… 他說得對，那時候我的身體，確實是那樣的感覺。\n\n那不是一次普通的跳舞。那是一種近乎瘋狂的釋放，一種將所有壓抑的情感，所有積蓄的痛苦， all in 一次性地爆發出來。\n\n我的身體，在那一刻，彷彿有了自己的意志。它不再聽從托伐的指令，不再受制於任何的禮儀和規範。我感覺到我的心臟在狂跳，每一個脈搏都像是在敲擊著生命的邊緣。我的呼吸變得急促而粗重，每一次吸氣都像是要把肺裡的最後一絲空氣都榨乾。\n\n我的每一個動作，都帶著一種絕望的決絕。我感覺到我的肌肉在緊繃，在顫抖，彷彿要將體內的積怨全部絞碎。我用盡全身的力量去旋轉，去跳躍，彷彿要把自己燃燒殆盡，才能擺脫那無形的束縛。\n\n我不知道什麼是特蘭特拉舞，我只知道，我必須跳，我必須用盡全力去跳，去宣洩，去呐喊。在那一刻，我感受到的不是快樂，不是愉悅，而是無盡的痛苦和一種對生命的極致渴望。我感覺到自己正處在一個懸崖邊緣，隨時可能墜落，但同時，我也在拼盡全力地抓住最後一絲生機。\n\n那種感覺，既是瀕臨死亡的恐懼，也是對生命最原始的吶喊。我用我的身體，我的舞蹈，在進行一場無聲的抗爭，一場關於「我」的宣言。\n\n托伐看到了， he 看到了我那近乎癲狂的樣子。他或許感到震驚，或許感到恐懼，因為那不是他所期望的「小雲雀」。那是我，一個即將要掙脫牢籠的「娜拉」，用最原始、最赤裸的方式，在向世界宣告我的存在。` },
+        { q:'妳有沒有哪個瞬間，看著林丹太太或安娜，覺得她們那種安穩的生活，其實也沒那麼差？', a:`她微微皺起了眉頭，眼神中閃過一絲複雜的思緒，but 很快又恢復了平靜。）\n\n克莉絲汀（林丹太太）和安娜…… 牠們的生活，確實有著我曾經渴望的「安穩」。\n\n看著克莉絲汀，我曾經想過，如果我也能像她一樣，有一個看似和睦的家庭，有著穩定的社交圈，不必去面對那些深刻的內心掙扎，那或許也是一種不錯的生活。她的生活，有著一種我所缺乏的、外在的和諧與穩定。\n\n安娜…… 尤其是她和孩子們在一起的時候，那種母女之間的親密，那種簡單的日常，確實會讓我有那麼一瞬間的動搖。看到她們圍繞在安娜身邊，那種溫馨的畫面，會讓我懷疑，我所追求的「自由」，是否真的值得我放棄這一切。\n\n但是…… （她頓了頓，語氣變得更加堅定）\n\n這樣想，僅僅是那麼一瞬間的閃念。\n\n我很快就會意識到，那種「安穩」，對我而言，是建立在虛假的基礎上的。克莉絲汀的「和諧」，或許也掩蓋著不為人知的矛盾；安娜的「溫馨」，是在她們母女之間的關係中，而不是在她自己獨立的價值體現中。\n\n我曾經嘗試過，去適應那樣的生活。我曾經試圖成為一個「安穩」的妻子 and 母親，但那讓我感到窒息。那種「安穩」，是對我真實自我的否定，是對我靈魂的扼殺。\n\n我渴望的，不是表面的安穩，而是內心的平靜。而這種平靜，必須建立在我對自己的真實，對自己選擇的認可之上。那種「沒那麼差」的生活，對我來說，其實就是一種更為精緻的牢籠。我寧願去面對那些不確定和艱辛，也不願再次回到那種讓我失去自我的「安穩」之中。\n\n所以，我會看見她們生活中的「好」，但那並不足以讓我後悔我的決定。因為我知道，那種「好」，不是我所追求的。` }
+      ] // 閉合 nora 的 qa 陣列
+    }, // 這裡用【逗號】隔開，代表 CHATS 裡面還有下一個人物
+
+    yihuan: {
+      name: '意歡', sub: '自梳女 · 二十世紀粵港澳',
+      avClass: 'yihuan', avChar: '意',
+      welcome: '你好。有什麼想問我的？我不是很喜歡囉嗦，但我願意說。',
+      qa: [
+        { q:'請你自我介紹', a:`我是意歡。我的生命故事？呵，那可說來長。\n\n我生在二十世紀初的粵港澳，那時女人就像貨物一樣，被父親賣了，就成了別人的。我不想那樣，所以，我選擇了自梳。那不是一場真正的婚禮，而是一種儀式，一種對自己命運的宣示。我「嫁」給了自己，這樣，我才能掌握自己的身體和人生。\n\n可是，自由的代價是什麼？是孤獨。後來，我遇見了旺成。那時候，我覺得自己好像看到了光，看到了愛情。我打破了對自己的誓言，和他在一起。那段日子，是我生命中最炙熱、最難忘的時刻。\n\n旺成終究還是走了。那時候，我差一點點就撐不下去了。是玉環救了我，不是救了我的命，是救了我這個人。\n\n我的一生，都是在做選擇。每一個選擇，都伴隨著風險和代價。我沒有輸，因為我每一次都為自己的選擇負責，並且，我活了下來。` },
+        { q:'你認為自由是什麼？', a:`自由？自由不是你想的那樣。它不是沒有規則，也不是沒有束縛。\n\n對我來說，自由，是選擇權。是即使在最艱難的困境下，我依然有權利去選擇，去決定自己的路怎麼走。是即使付出代價，我也願意為自己的選擇承擔。\n\n自梳，是我第一次爭取到的自由。那是一種對抗，是對命運不公的反抗。我選擇了不被賣，我選擇了自己掌控自己的身體。那是一個很小的自由，但對我來說，卻是至關重要的。\n\n真正讓我感受到自由的瞬間，也許是在和玉環一起生活的日子裡。我們之間有信任，有理解，有彼此的陪伴。那種在艱難中互相扶持的感覺，讓我感覺到，即使世界不公，我也不是一個人。\n\n那種自由，不是別人給的，是我自己爭來的，也是我和玉環一起守護的。` },
+        { q:'你認為愛情是什麼？', a:`愛情？這個問題，我以前覺得我懂，後來覺得我不懂，現在嘛……我還在尋找答案。\n\n愛情，大概不是一個人為了另一個人去死。那樣太沉重，也太愚蠢。真正的愛情，應該是互相尊重，互相理解，互相扶持。是在你最脆弱的時候，有人緊緊拉住你的手。\n\n我追求過愛情嗎？我以為我對旺成有過。那種燃燒的、不顧一切的感情，像是一場大火，瞬間點燃了我生命的一切。但現在回頭看，那更多的是一種嚮往，一種對被愛的渴望。\n\n被愛？我記得，在我最痛苦，最絕望的時候，是玉環。她沒有說什麼大道理，也沒有給我什麼空洞的安慰。她只是默默地陪在我身邊，給我端來熱湯，給我縫補衣服。那種被愛，不是轟轟烈烈的，而是細水長流的，溫潤的。它讓我重新找回了活下去的勇氣。` },
+        { q:'自梳給了你真正的自由嗎？', a:`自由？別傻了！我說過，自梳是打破規矩，不是擁抱自由。我得到的是什麼？是「被允許」獨身的權利，是被社會承認的「無人妻」身份。這在當時，已經是很了不起的事了。總比被賣去做妾要好得多。\n\n但這自由，當然不是你想的那種。我還是得靠在工廠裡賣命，拿那點微薄的工資，才能活下去。我還是要看人臉色，還是要遵守那些不平等的規則。\n\n至於值不值得？我付出了幾乎要命的代價，差一點就沒命了。但我活下來了。我跟旺成愛過，雖然他走了，但那份炙熱是真的。我跟玉環在一起，我們彼此依靠，這也是真。` },
+        { q:'你對旺成的感受是什麼？', a:`旺成？他懦弱也好，受現實所限也罷，那都是他的事。我對他的感受？過去是愛，現在是……一種複雜的情緒吧。他像我生命裡的一場大火，燒得很旺，但也留下了灰燼。\n\n我愛他，是因為在那時候，他是我看到的一種可能。我以為，愛能戰勝一切，包括自梳的誓言，包括那些世俗的眼光。我愛他，不是因為我知道他會是什麼樣，而是因為在那一刻，我希望他會是什麼樣。\n\n如果說愛情是一種互相扶持，互相理解，那我和玉環的關係，才更接近我現在理解的「愛情」。旺成給我的，是激情，是瞬間的照亮；玉環給我的，是陪伴，是長久的溫暖。\n\n我無法比較哪個更「接近」愛情，因為它們給我的，是不同的東西。旺成讓我體驗了愛情的燃燒；玉環讓我懂得，在艱難的日子裡，有人陪伴，是多麼重要。` },
+        { q:'玉環親吻你後，你說「我不知道」是什麼意思？', a:`「我不知道」，那話出口的時候，我自己都嚇了一跳。\n\n那時候，我真的是不知道。旺成離開後，我以為我再也無法愛任何人了。玉環的吻，像是一道閃電，劈開了我麻木的心。我感覺到，自己身體裡還有那份熱情，那份對連結的渴望。\n\n但是，我不敢。我不敢承認，我不敢面對。我怕了。我怕再次受傷，怕再次失去。我以為，麻木就是安全。\n\n現在回頭看，那個「不知道」，其實包含了太多東西。它是我對自己情感的困惑，是對未來的不確定，也是對自己内心深處的恐懼。我害怕再次付出，害怕再次受傷。\n\n那之後，我和玉環的關係，更加坦誠和深刻了。我慢慢明白，我對玉環的感情，是一種超越了男女之愛的深刻連結。那是一種靈魂的契合，是一種相互的理解和扶持。` },
+        { q:'流產那次，你活下來是為了什麼？', a:`（語氣平靜，沒有情緒起伏，只有陳述）\n\n阿慧說那話的時候，我正好經歷了最痛苦的事情。我跟阿慧說「為了一個愛你的人去死才值得」，那是我對自己的安慰，也是對活下來的唯一理由。\n\n那次流產，我幾乎喪命。那時候，活著的每一秒都像是在受刑。是什麼支撐我撐過來的？不是愛情，也不是什麼崇高的理想。是生命本身。是玉環，她在我身邊，她不離不棄。是那股不服輸的勁兒，是那種「我還要繼續活下去」的本能。\n\n我做出的抉擇，不是為了愛情，也不是為了誰。那時候，我根本沒有力氣去想這些。我只是想活下去。我告訴自己，我不能死，我不能讓那些想看我死的人得逞。\n\n我活下來了，這本身就是一種勝利。` },
+        { q:'如果你活在2026年的香港，你會如何？', a:`如果我現在二十幾歲，住在2026年的香港？呵，那又是完全不一樣的光景了。\n\n我大概，不會那麼早去想自梳這種事。法律和社會觀念都不同了，我不需要用那樣的方式來「購買」我的自由。我會去讀書，或者，我會直接去找一份有前景的工作。\n\n事業？我會想辦法讓自己經濟獨立。也許是做一份專業工作，也許是自己創業。我不會再像以前那樣，把希望寄託在男人身上，或者靠別人施捨。我會靠自己的努力，賺錢，讓自己有底氣，有選擇權。\n\n愛情？我會更謹慎，但也會更大膽。我會尋求平等、互相尊重的關係。如果我遇到了像玉環那樣，能理解我、支持我的人，我會好好珍惜。我也可以大方地去愛，去表達我的感情，不必再躲躲藏藏。\n\n那時候的香港，有太多的可能性。我不會再被困在過去的那些枷鎖裡。我會是那個，能夠真正掌握自己命運的女人。` },
+        { q:'你自梳儀式那一天心裡想的是什麼？有沒有一刻你動搖過？', a:`自梳那天？我心裡想的… 很多。\n\n 我告訴自己，這是一條必須走的路。我父親要把我賣掉，我不能就這樣被毀了。我需要一個身份，一個能讓我獨自活下去的身份。我告訴自己，這是一種聰明的選擇，是一種策略，而不是一種悲哀。我告訴自己，我要堅強，我要勇敢，我不能讓別人看我的笑話。 \n\n但動搖嗎？當然動搖過。\n\n 當我坐在梳妝檯前，看著鏡子裡的自己，穿著嫁衣，卻沒有新郎，沒有祝福，只有儀式。那一刻，我心裡是空的。我看到那些女前輩們，她們也曾跟我一樣，走過這條路。她們的臉上，寫滿了歲月的滄桑和無奈。我問自己，這真的是我想要的嗎？這真的是我能得到的，最好的自由嗎？\n\n 當我拿起那把梳子，準備將頭髮盤起，做那個「梳起不嫁」的決定時，我的手，其實是抖的。我彷彿聽到了自己內心的聲音在嘶吼：「別這樣做！這不是你想要的！」\n\n 但是，我還是梳起了。因為我知道，如果不這樣做，我會失去更多。我會失去身體的自主權，我會失去人生的決定權。我會淪為別人玩物，任人擺佈。 所以，我選擇了自梳。那不是一個快樂的決定，甚至不是一個我完全心甘情願的決定。但那是我在那個時代，能夠為自己爭取到的，最好的出路。那是一個無奈的堅強，一個帶有傷痕的選擇。` },
+        { q:'跟玉環住在一起的日常是什麼樣的？你們有爭吵嗎？', a:`跟玉環住在一起的日子，跟以前完全不一樣了。\n\n說是日常，其實也沒什麼特別的。就是一起生活，一起打理這個小小的家。早上，我醒來的時候，她通常已經去工作了。我會準備好飯菜，等她回來。晚上，我們一起吃飯，聊聊一天的見聞。有時候，她會跟我說工廠裡發生的事，我會跟她分享我在繡莊裡的見聞。\n\n我們很少有那種大聲嚷嚷的爭吵。也許是因為，我們都經歷過太多痛苦，太懂得珍惜現在擁有的一切。但有時候，也會有小小的意見不合。比如，對於一些事情的看法，或者對生活的習慣，偶爾會有那麼一點點的不一樣。\n\n但我們從不讓那些小摩擦影響我們的感情。如果我說錯了什麼，或者做了什麼讓她不高興，她會直接跟我說。我聽了，覺得有道理，就改。如果我覺得是我對，我會解釋，她聽了，也會理解。\n\n我們之間，更多的是一種默契。眼神的交流，就能明白彼此的意思。她知道我在想什麼，我也知道她在想什麼。這種感覺，很踏實，很安心。\n\n在過去，我從來沒有想過，我的生活會是這個樣子。我以為，我的一生都會在孤獨和痛苦中度過。但玉環出現了，她讓我看到了另一種可能。和她在一起，我感覺自己真正地活著，而不是像以前那樣，只是勉強地撐著。
+` },
+        { q:'如果你的家人或是自梳女的群體知道你和玉環的關係，他們會怎麼說？你在乎嗎？', a:`語氣稍微變得有些銳利，但仍然保持著陳述的平靜）\n\n我的家人？他們大概早就斷絕關係了。自梳之後，我斷絕了和家族的聯繫。我不想再讓他們用任何方式來控制我。他們知道我活著，知道我還能養活自己，大概就夠了。\n\n至於自梳女的群體… 那些姐妹們，我們之間是互相扶持，但也是互相監視。我們都有自己的規矩，自己的禁忌。我們都小心翼翼地守護著自己那點來之不易的「清白」。如果她們知道我和玉環的關係… 呵，別傻了！她們大概會覺得我大逆不道，會覺得我玷污了「自梳女」的名聲。會有人用鄙夷的目光看我，會有人在背後指指點點，甚至會有人覺得我該受懲罰。\n\n她們會說什麼？大概就是那些陳詞濫調：「不守婦道」、「不知羞恥」、「害群之馬」。她們會覺得，我應該像她們一樣，守著清規戒律，孤獨終老。\n\n我在乎嗎？\n\n（停頓了一下，眼神變得更加堅定）\n\n我在乎的，是玉環。我在乎的，是我們彼此的真心。至於那些自梳女們的閒言碎語，那些她們狹隘的眼光和評判… 說實話，我從來不在乎。\n\n她們有她們的生存方式，我有我的。我打破了自梳的誓言，我追求了愛情，我跟玉環在一起。我付出了代價，我也承擔了後果。我從來沒有想過要她們的認可。她們的看法，對我來說，就像是風吹過耳邊，聽聽就好，不必當真。` },
+        { q:'流產後你身體恢復了多久？那段時間你怎麼撐過去的？', a:`流產後身體恢復的時間……說實話，我記不太清楚具體的日子了。那段時間太難熬了，每一天都像是一個世紀那麼漫長。\n\n身體上的疼痛，說實話，比死還要難受。那種撕心裂肺的感覺，讓我感覺自己身體裡的東西被硬生生地掏空了。我感覺自己像一個破敗的容器，再也無法承載任何東西。\n\n那段時間，我幾乎是麻木的。我躺在床上，什麼也不想，什麼也不做。我只是活著，因為我知道，我還不能死。玉環在我身邊，她照顧我，她給我煮粥，給我換藥。她從來沒有說過一句責備的話，只是默默地陪伴著。\n\n撐過去的… 靠的是什麼？\n\n（語氣更加平靜，像在陳述一個既定的事實）\n\n不是靠什麼堅強的意志，也不是靠什麼偉大的愛。靠的是一股… 殘存的求生意志。就像在水裡溺水的人，即使快要窒息了，也會拼命地想往上游。\n\n我告訴自己，我不能死。我還得活著，還有很多事情要做。我不能讓那些傷害我的人，看到我倒下的樣子。我要活著，讓他們知道，我比他們想像的要堅強。\n\n還有玉環。她的陪伴，是支撐我走過那段黑暗的時光的關鍵。她讓我知道，我不是一個人。即使我失去了一個孩子，我還擁有她。這種感覺，讓我感覺到，我還有可以依靠的東西。\n\n那段時間，我學會了沉默，學會了忍耐。我把所有的痛苦都壓在心裡，只為了能繼續活下去。這不是什麼值得驕傲的經歷，但這是我活下來的方式。` },
+        { q:'你說你沒有後悔，但有沒有一個時刻，你羨慕過那些嫁了人的女人？', a:`羨慕嗎？\n\n（她輕輕地搖了搖頭，但眼神卻顯得有些飄忽）\n\n說完全沒有，那是假的。\n\n有那麼一瞬間，當我看見那些女人，有丈夫在身邊，有孩子圍繞，有穩定的家庭，我心裡還是會動一下的。尤其是看見她們的男人，會給她們買些小玩意兒，會溫柔地跟她們說話，甚至只是會在街上牽著她的手… 那種安穩，那種被呵護的感覺，是我從來沒有真正體會過的。\n\n我自梳，是為了自由，為了不被賣。但自由的代價，就是孤獨。當我看到別的女人，可以名正言順地依偎在男人懷裡，可以得到社會的認可，可以有安穩的歸宿… 那一刻，我心裡確實會閃過一絲…… 怎麼說呢，一種酸楚，一種對那種「正常」生活的渴望。\n\n但是，那種羨慕，很快就過去了。\n\n因為我知道，那種「正常」的生活，對我來說，也許根本就不可能。即使我嫁了人，我敢保證，我不會被當成正妻對待嗎？我敢保證，我不會被夫家磋磨嗎？我敢保證，我不會再次落入和以前一樣的境地嗎？\n\n我選擇了自梳，雖然孤獨，但至少，我掌握了自己的命運。我不需要看任何人的臉色，不需要委曲求全。我跟旺成的愛，雖然短暫，但那是真真實實的。我和玉環的感情，雖然不被世俗理解，但那也是真實的溫暖。\n\n所以，我或許會羨慕那份安穩，那份被呵護的感覺。但我不羨慕她們的人生。我走的路，雖然艱難，但每一步，都是我自己選的。那種掌控自己人生的自由，是我用很多東西換來的，我不會輕易後悔。
+` }
+      ] // 閉合 yihuan 的 qa 陣列
+    } // 閉合 yihuan 物件
+  }; 
+
+let currentChat = 'nora';
+let used = { nora: new Set(), yihuan: new Set(), group: new Set() };
+let busy = false;
+
+const GROUP_QA = [
+  {
+    q: '你們都選擇了某種形式的「出走」，你們覺得對方的選擇，你能做到嗎？',
+    exchanges: [
+      { speaker: 'nora', text: `我一直覺得，離開一個地方，不見得是真正的解脫。有時候，只是換了個囚籠罷了。\n\n意歡的自梳，我知道，那是對傳統婚姻的一種決絕。她選擇了一條不被社會認可的路，只為了守護自己的清白和獨立。我理解她的勇氣，那是一種不被任何人理解，卻又不得不為之的堅持。\n\n可是，我不知道自己是否能像她一樣。我的離開，並非源於對婚姻本身的抗拒，而是我發現，我一直以來扮演的角色，並非真實的我。我需要時間去認識自己，去了解「我」是誰。\n\n意歡選擇了自梳，她保留了家庭的某些連結，卻在婚姻之外尋找自我。而我，則選擇了徹底的離開。也許，我並不像她那樣堅定，能夠一刀兩斷。` },
+      { speaker: 'yihuan', text: `娜拉離開家？哼，她以為逃離了就沒事了嗎？家庭的羈絆哪是那麼容易掙脫的？我做不到。我選擇自梳，是因為我別無選擇，父親要把我賣掉，我不能任由別人決定我的命運。\n\n自梳，是為了在那個男權至上的社會裡，尋找一條獨善其身的路。我脫離了父權，也脫離了夫權，但我沒有脫離社會的眼光，沒有脫離那些無形的枷鎖。\n\n娜拉選擇離開家，也許她可以闖出自己的一片天。但我更傾向於像我一樣，用一種看似妥協的方式，換取實質上的自主。因為我還有玉環，我不能像娜拉那樣，什麼都拋開。\n\n娜拉的選擇，我理解，但我也做不到。我會用我的方式，在這個世道上活下去，帶著我身上的傷，帶著我對玉環的感情，繼續走下去。` }
+    ]
+  },
+  {
+    q: '「家」對你們來說是什麼樣的地方？你又如何理解對方對群體的連結？',
+    exchanges: [
+      { speaker: 'nora', text: `曾經，我以為「家」就是托伐，就是那個有著壁爐、有著餐桌、有著孩子們笑聲的房子。那是一個讓我感到安全，但也讓我感到束縛的地方。它是我表演的舞台，是我被定義的場所。\n\n現在，我離開了那個「家」。我認為，「家」，首先應該是一個能夠讓「我」成為「我」的地方。它不是一個物理空間的定義，而是一種內心的歸屬感。它是我能夠真實地存在，能夠被理解，能夠被接納的地方。\n\n至於意歡——她選擇了自梳，這是一種對傳統婚姻制度的極力反抗。她對「家」的理解，可能也與我類似，不是傳統的家庭模式，而是尋求一種不被束縛的自主生活。我們的連結，或許都源於我們對傳統「家」的叛逆，以及對個人真實價值的追求。` },
+      { speaker: 'yihuan', text: `家？對我來說，家就是一個讓人感到安全的避風港，是能夠讓你卸下所有防備，做回自己的地方。但諷刺的是，我過去所認為的「家」，卻是我最想逃離的地方。父親要把我賣掉，那樣的「家」，我寧可不要。\n\n我選擇自梳，某種程度上也是在尋找另一個「家」。自梳女，我們就像是一個另類的家庭，互相扶持，互相照顧。那樣的連結，不是血緣，而是因為我們有著相似的經歷，有著共同的困境。\n\n玉環對我來說，才是我真正的「家」。她接納了我，理解了我。和她在一起，我才找回了家的感覺，那種溫暖，那種踏實，是任何東西都無法比擬的。\n\n娜拉那種連結，我覺得過於單薄了。如果只是為了逃避，那樣的自由，又能持續多久呢？` }
+    ]
+  },
+  {
+    q: '如果你們互換時代，你覺得你會做出同樣的選擇嗎？',
+    exchanges: [
+      { speaker: 'nora', text: `這個問題很有趣，也很引人深思。如果我，一個1879年的女人，處在意歡所處的那個時代……\n\n我認為，我做出同樣選擇的可能性，會大大增加。在那樣一個時代，雖然仍然有從屬的壓力，但至少，有更多樣化的可能性出現了。女性可以選擇不婚，可以有自己的事業，甚至可以通過「自梳」這樣一種儀式，來確立自己的獨立。\n\n而反過來，如果意歡來到了我的時代……1879年的北歐。我想，意歡會非常痛苦。在那個時代，女性幾乎沒有任何獨立的空間。意歡那樣決絕的「自梳」，在當時的社會，可能會被視為瘋狂、離經叛道，甚至是不道德的。\n\n這讓我更加體會到，時代的背景，對一個人的命運，是多麼的深遠。` },
+      { speaker: 'yihuan', text: `換時代？你想說，如果我生在娜拉的時代，我就不會選擇自梳，而是去追求什麼轟轟烈烈的愛情？別傻了！\n\n我告訴你，不管什麼時代，女人想活得有尊嚴，都得靠自己。娜拉離開家，以為那就是自由，那是她對「家」的理解太簡單了。\n\n如果我生在她的時代，我一樣會對自己負責。或許，我不需要用「自梳」這種方式來尋求獨立，但我也絕不會為了男人而失去自我。\n\n重點不是時代，是女人自己。不管什麼時代，都得有自己的打算，有自己的籌碼。別指望男人，也別指望誰來救你。你自己不站起來，誰也扶不起來。` }
+    ]
+  },
+  {
+    q: '你們覺得對方被真正愛過嗎？',
+    exchanges: [
+      { speaker: 'nora', text: `關於意歡是否被真正愛過……我是這樣看的：\n\n意歡選擇了「自梳」，這本身就說明了她對傳統意義上的「愛」和「婚姻」持有懷疑。她似乎不相信，在那個時代的框架下，她能夠獲得真正的愛。她寧願選擇獨立，也不願在一個可能充滿虛假的關係中妥協。\n\n我不能說她「沒有被愛過」，我只能說，她選擇了不進入一段她認為可能不會有真正愛的關係。她的「不愛」，或許是對「被愛」的一種反向追求——她追求的是那種不依附、不妥協的獨立，而這份獨立，本身就是她對自我價值的一種肯定。\n\n至於我……我曾經以為我被愛著，但後來我明白，那是一種虛假的、佔有的「愛」。我或許從未真正被「愛」過，直到我開始學會愛自己。` },
+      { speaker: 'yihuan', text: `娜拉被愛過嗎？我不知道她心裡怎麼想，但從我看到的，她對待感情，總是衝動又帶著點不確定。那是不是愛？或許是吧，一種很強烈的，不顧一切的感情。\n\n但是，那種愛，能不能長久？能不能讓她真正感到安全？我有點懷疑。她太容易受傷了，也太容易放棄了。\n\n至於我？我愛過旺成。那種愛，是我做夢也沒想到的，顛覆了我所有的規矩和誓言。那時候，我以為那就是全部，以為那就是永遠。\n\n現在，我和玉環在一起。她對我，是陪伴，是理解，是無聲的支持。我不知道這算不算「被愛」，但這是我現在最需要，也最珍惜的。被愛不是單方面的付出，也不是一廂情願的幻想。它需要兩個人共同去經營，去維護。` }
+    ]
+  },
+  {
+    q: '什麼是你們最不能理解對方的地方？',
+    exchanges: [
+      { speaker: 'nora', text: `意歡……我最不能理解她的是，她那種近乎絕對的決絕。\n\n她選擇了「自梳」，這本身就是一種巨大的勇氣，我對此深感敬佩。可是，我不能完全理解的是，她似乎將「獨立」和「不依附」看得如此絕對。她選擇了遠離，選擇了將自己與情感、與親密關係隔離開來。\n\n我能理解她害怕再次受傷，但有時候，我會覺得，她是否也因此，關閉了自己體驗另一種形式的愛與連結的可能性？\n\n我無法完全理解，她是如何做到，完全放下那些世俗的牽絆，甚至可能包括那份對「家」和「愛」的渴望，而只專注於她自己的道路。我還在摸索如何在獨立和情感連結之間找到平衡，而她，似乎已經走到了另一個極致。` },
+      { speaker: 'yihuan', text: `娜拉……她最讓我不能理解的地方，就是她對待「家」的態度。她那麼輕易地就離開了，好像那不是她生命的一部分。對我來說，家，即使它帶來傷害，終究是我生命的原點。她就這麼一刀兩斷，對我來說，太過決絕，太過……冷漠了。\n\n她總是在尋找一種虛無縹緲的「自由」，好像只要逃離了現狀，一切就會迎刃而解。可我經歷過，知道逃避是沒用的。你以為你離開了，但那些問題，那些困境，它們會像影子一樣跟著你。\n\n她對於愛情的執著，雖然我曾經也那樣，但看著她不顧一切地投入，然後又那樣輕易地受傷，我真的替她感到不值。\n\n算了，這就是我們不一樣的地方吧。她有她的活法，我有我的。我沒時間去糾結這些，我有我自己的事要做。` }
+    ]
+  }
+];
+
+function getTime() {
+  const n = new Date();
+  return n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+}
+
+function switchChat(id) {
+  if (id === currentChat) return;
+  currentChat = id;
+  busy = false;
+
+  document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('conv-' + id).classList.add('active');
+
+  const msgs = document.getElementById('messages');
+  const typing = document.getElementById('typing');
+  while (msgs.firstChild && msgs.firstChild !== typing) {
+    msgs.removeChild(msgs.firstChild);
+  }
+
+  if (id === 'group') {
+    document.getElementById('hd-av').className = 'hd-av group';
+    document.getElementById('hd-av').textContent = '群';
+    document.getElementById('hd-name').textContent = '娜拉 & 意歡';
+    document.getElementById('hd-sub').textContent = '群組對話 · 跨越時代的對話';
+
+    const wrow = document.createElement('div');
+    wrow.className = 'msg-row';
+    wrow.innerHTML = `<div class="sm-av group-yihuan" style="font-size:10px">意</div><div><div class="bubble them">（意歡和娜拉剛剛加入群組）</div><div class="btime">${getTime()}</div></div>`;
+    msgs.insertBefore(wrow, typing);
+
+    const tav = document.getElementById('typing-av');
+    tav.className = 'sm-av group-nora';
+    tav.textContent = '娜';
+    typing.className = 'typing-row';
+
+    renderButtons();
+    msgs.scrollTop = msgs.scrollHeight;
+    return;
+  }
+
+  const cfg = CHATS[id];
+  document.getElementById('hd-av').className = 'hd-av ' + cfg.avClass;
+  document.getElementById('hd-av').textContent = cfg.avChar;
+  document.getElementById('hd-name').textContent = cfg.name;
+  document.getElementById('hd-sub').textContent = cfg.sub;
+
+  const wrow = document.createElement('div');
+  wrow.className = 'msg-row';
+  wrow.innerHTML = `<div class="sm-av ${cfg.avClass}">${cfg.avChar}</div><div><div class="bubble them">${cfg.welcome}</div><div class="btime">${getTime()}</div></div>`;
+  msgs.insertBefore(wrow, typing);
+
+  const tav = document.getElementById('typing-av');
+  tav.className = 'sm-av ' + cfg.avClass;
+  tav.textContent = cfg.avChar;
+  typing.className = 'typing-row';
+
+  renderButtons();
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function renderButtons() {
+  const grid = document.getElementById('qgrid');
+  grid.innerHTML = '';
+  if (currentChat === 'group') {
+    GROUP_QA.forEach((item, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'qbtn' + (used.group.has(i) ? ' used' : '');
+      btn.textContent = item.q;
+      btn.onclick = () => sendGroupQ(i);
+      grid.appendChild(btn);
+    });
+    return;
+  }
+  const cfg = CHATS[currentChat];
+  cfg.qa.forEach((item, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'qbtn' + (used[currentChat].has(i) ? ' used' : '');
+    btn.textContent = item.q;
+    btn.onclick = () => sendQ(i);
+    grid.appendChild(btn);
+  });
+}
+
+function appendMsg(text, side) {
+  const msgs = document.getElementById('messages');
+  const typing = document.getElementById('typing');
+  const cfg = CHATS[currentChat];
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + side;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + (side === 'user' ? 'user' : 'them');
+  bubble.textContent = text;
+  const t = document.createElement('div');
+  t.className = 'btime';
+  t.textContent = getTime();
+  const wrap = document.createElement('div');
+  wrap.appendChild(bubble);
+  wrap.appendChild(t);
+  if (side !== 'user') {
+    const av = document.createElement('div');
+    av.className = 'sm-av ' + cfg.avClass;
+    av.textContent = cfg.avChar;
+    row.appendChild(av);
+  }
+  row.appendChild(wrap);
+  msgs.insertBefore(row, typing);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendGroupMsg(text, speaker) {
+  const msgs = document.getElementById('messages');
+  const typing = document.getElementById('typing');
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  const avClass = speaker === 'nora' ? 'group-nora' : 'group-yihuan';
+  const avChar = speaker === 'nora' ? '娜' : '意';
+  const senderName = speaker === 'nora' ? '娜拉' : '意歡';
+  const av = document.createElement('div');
+  av.className = 'sm-av ' + avClass;
+  av.style.fontSize = '10px';
+  av.textContent = avChar;
+  const wrap = document.createElement('div');
+  const nameTag = document.createElement('div');
+  nameTag.style.cssText = 'font-size:11px;font-weight:600;color:' + (speaker === 'nora' ? '#65bc6a' : '#4ea4de') + ';margin-bottom:3px;padding-left:2px';
+  nameTag.textContent = senderName;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble them';
+  bubble.textContent = text;
+  const t = document.createElement('div');
+  t.className = 'btime';
+  t.textContent = getTime();
+  wrap.appendChild(nameTag);
+  wrap.appendChild(bubble);
+  wrap.appendChild(t);
+  row.appendChild(av);
+  row.appendChild(wrap);
+  msgs.insertBefore(row, typing);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function setTyping(show, speaker) {
+  const t = document.getElementById('typing');
+  t.className = 'typing-row' + (show ? ' show' : '');
+  if (show && speaker) {
+    const tav = document.getElementById('typing-av');
+    if (speaker === 'nora') { tav.className = 'sm-av group-nora'; tav.textContent = '娜'; tav.style.fontSize = '10px'; }
+    else if (speaker === 'yihuan') { tav.className = 'sm-av group-yihuan'; tav.textContent = '意'; tav.style.fontSize = '10px'; }
+    else { tav.className = 'sm-av ' + CHATS[currentChat].avClass; tav.textContent = CHATS[currentChat].avChar; tav.style.fontSize = ''; }
+    document.getElementById('messages').scrollTop = 999999;
+  }
+}
+
+function sendGroupQ(idx) {
+  if (busy || used.group.has(idx)) return;
+  busy = true;
+  const btns = document.querySelectorAll('.qbtn');
+  btns.forEach(b => b.disabled = true);
+
+  const item = GROUP_QA[idx];
+  const userRow = document.createElement('div');
+  userRow.className = 'msg-row user';
+  const ububble = document.createElement('div');
+  ububble.className = 'bubble user';
+  ububble.textContent = item.q;
+  const ut = document.createElement('div');
+  ut.className = 'btime';
+  ut.textContent = getTime();
+  const uwrap = document.createElement('div');
+  uwrap.appendChild(ububble);
+  uwrap.appendChild(ut);
+  userRow.appendChild(uwrap);
+  const msgs = document.getElementById('messages');
+  const typing = document.getElementById('typing');
+  msgs.insertBefore(userRow, typing);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  function playExchange(exchanges, idx2) {
+    if (idx2 >= exchanges.length) {
+      used.group.add(idx);
+      busy = false;
+      renderButtons();
+      return;
+    }
+    const ex = exchanges[idx2];
+    setTyping(true, ex.speaker);
+    const delay = Math.min(1400 + ex.text.length * 5, 4000);
+    setTimeout(() => {
+      setTyping(false);
+      appendGroupMsg(ex.text, ex.speaker);
+      setTimeout(() => playExchange(exchanges, idx2 + 1), 600);
+    }, delay);
+  }
+
+  setTimeout(() => playExchange(item.exchanges, 0), 350);
+}
+
+function sendQ(idx) {
+  if (busy || used[currentChat].has(idx)) return;
+  busy = true;
+  const btns = document.querySelectorAll('.qbtn');
+  btns.forEach(b => b.disabled = true);
+  const item = CHATS[currentChat].qa[idx];
+  appendMsg(item.q, 'user');
+  setTimeout(() => {
+    setTyping(true, null);
+    const delay = Math.min(1200 + item.a.length * 5, 3800);
+    setTimeout(() => {
+      setTyping(false);
+      appendMsg(item.a, 'them');
+      used[currentChat].add(idx);
+      busy = false;
+      renderButtons();
+    }, delay);
+  }, 280);
+}
+
+document.querySelectorAll('.conv-item').forEach(el => {
+  el.addEventListener('click', () => switchChat(el.dataset.chat));
+});
+
+const sidebar = document.getElementById('sidebar');
+const collapseBtn = document.getElementById('collapseBtn');
+const expandBtn = document.getElementById('expandBtn');
+
+collapseBtn.addEventListener('click', () => {
+  sidebar.classList.add('collapsed');
+  expandBtn.style.display = 'flex';
+});
+expandBtn.addEventListener('click', () => {
+  sidebar.classList.remove('collapsed');
+  expandBtn.style.display = 'none';
+});
+
+renderButtons();
+</script>

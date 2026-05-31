@@ -202,6 +202,28 @@
 }
   
   .coming-soon{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#707579;gap:8px;background:#f4f4f4}
+
+  .tg-toggle-inline{
+    background: rgba(255,255,255,0.92);
+    border: none;
+    cursor: pointer;
+    color: #333;
+    width: clamp(36px, 9vw, 42px);
+    height: clamp(36px, 9vw, 42px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    margin-right: clamp(4px, 1.5vw, 8px);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  .tg-toggle-inline i {
+    font-size: clamp(18px, 5vw, 22px);
+    font-weight: 600;
+  }
+  .tg-toggle-inline:hover { background: #f0f0f0; }
   </style>
 
 <div class="app">
@@ -239,8 +261,8 @@
 
   <div class="chat-panel">
     <div class="tg-header">
-      <button class="tg-toggle-inline" id="expandBtn" aria-label="展開側邊欄" style="display:none">
-        <i class="ti ti-menu-2" aria-hidden="true"></i>
+      <button class="tg-toggle-inline" id="expandBtn" aria-label="返回對話列表" style="display:none">
+        <i class="ti ti-arrow-left" aria-hidden="true"></i>
       </button>
       <div class="hd-av nora" id="hd-av">娜</div>
       <div>
@@ -397,6 +419,9 @@ function switchChat(id) {
 
     renderButtons();
     msgs.scrollTop = msgs.scrollHeight;
+
+    sidebar.classList.add('collapsed');
+    expandBtn.style.display = 'flex';
     return;
   }
 
@@ -419,10 +444,8 @@ function switchChat(id) {
   renderButtons();
   msgs.scrollTop = msgs.scrollHeight;
 
-  if (window.innerWidth <= 600) {
-    sidebar.classList.add('collapsed');
-    expandBtn.style.display = 'flex';
-  }
+  sidebar.classList.add('collapsed');
+  expandBtn.style.display = 'flex';
 }
 
 function renderButtons() {
